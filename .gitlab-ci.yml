@@ -1,0 +1,114 @@
+stages:
+  - build
+  - test
+
+build-frontend:
+  stage: build
+  tags: ["docker"]
+  image: node:20
+  variables:
+    npm_config_optional: "true"
+  script:
+    - cd Frontend
+    - npm cache clean --force
+    - rm -rf node_modules package-lock.json
+    - npm i --no-audit
+    - npm run build
+  artifacts:
+    when: always
+    paths:
+      - Frontend/dist
+      - Frontend/build
+    expire_in: 15 days
+
+build-backend:
+  stage: build
+  tags: ["docker"]
+  image: maven:3.9.9-eclipse-temurin-21
+  script:
+    - mvn -B -f Backend/stock-control/pom.xml -DskipTests package
+  artifacts:
+    when: always
+    paths:
+      - Backend/stock-control/target/*.jar
+      - Backend/stock-control/target/surefire-reports/
+      - Backend/stock-control/target/site/jacoco/
+    expire_in: 15 days
+
+test-frontend:
+  stage: test
+  tags: ["docker"]
+  image: node:20
+  cache:
+    key: "npm-${CI_COMMIT_REF_SLUG}"
+    paths:
+      - Frontend/.npm
+  script:
+    - cd Frontend
+    - npm ci --cache .npm --prefer-offline || npm i
+    - JEST_JUNIT_OUTPUT=reports/jest/junit.xml npx jest --ci --coverage --reporters=default --reporters=jest-junit
+  artifacts:
+    when: always
+    paths:
+      - Frontend/coverage
+      - Frontend/reports
+    reports:
+      junit:
+        - Frontend/reports/jest/junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: Frontend/coverage/cobertura-coverage.xml
+    expire_in: 15 days
+  coverage: '/All files\s*\|\s*([0-9.]+)\s*\|/'
+
+
+test-backend:
+  stage: test
+  tags: ["docker"]
+  image: maven:3.9.9-eclipse-temurin-21
+  cache:
+    key: "maven-${CI_COMMIT_REF_SLUG}"
+    paths:
+      - .m2/repository
+  script:
+    - mvn -B -f Backend/stock-control/pom.xml clean test jacoco:report surefire-report:report-only
+  artifacts:
+    when: always
+    paths:
+      - Backend/stock-control/target/surefire-reports/               
+      - Backend/stock-control/target/site/jacoco/                    
+      - Backend/stock-control/target/site/surefire-report.html      
+    reports:
+      junit:
+        - Backend/stock-control/target/surefire-reports/*.xml
+      coverage_report:
+        coverage_format: jacoco
+        path: Backend/stock-control/target/site/jacoco/jacoco.xml
+    expire_in: 15 days
+  allow_failure: true
+
+
+test-ml:
+  stage: test
+  tags: ["docker"]
+  image: python:3.12-slim
+  before_script:
+    - python -m pip install --upgrade pip
+    - pip install -r ML/requirements.txt
+  script:
+    - cd ML
+    - pytest -q --maxfail=1 --disable-warnings --cov=. --cov-report=html:ml-reports/html --cov-report=xml:ml-reports/coverage.xml --junitxml=ml-reports/junit.xml
+    - python generate_metrics_report.py 
+  artifacts:
+    when: always
+    paths:
+      - ML/ml-reports/
+    reports:
+      junit:
+        - ML/ml-reports/junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: ML/ml-reports/coverage.xml
+    expire_in: 15 days
+
+

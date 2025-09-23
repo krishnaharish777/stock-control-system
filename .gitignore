@@ -1,0 +1,67 @@
+
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Frontend
+
+Frontend/node_modules/
+Frontend/.npm/
+Frontend/dist/
+Frontend/build/
+Frontend/coverage/
+Frontend/reports/
+npm-debug.log*
+yarn-error.log*
+
+
+# Backend 
+Backend/**/target/
+Backend/**/surefire-reports/
+Backend/**/jacoco/
+Backend/**/site/
+*.log
+
+
+# Python / ML
+
+ML/.venv/
+ML/__pycache__/
+ML/.pytest_cache/
+ML/*.pyc
+ML/ml-reports/       
+ML/.coverage
+ML/*.ipynb_checkpoints/
+ML/data/
+ML/output/
+
+# ML workspace
+/ML/.venv/
+/ML/__pycache__/
+/ML/.pytest_cache/
+/ML/.coverage
+/ML/ml-reports/
+/ML/html/
+/ML/**/*.pyc
+/ML/tests/__pycache__
+
+# Secrets / Credentials
+.env
+*.env
+*.pem
+*.key
+*.p12
+*.keystore
+*.jks
+**/secrets/**
+**/credentials/**
+*service*.json
+*credentials*.json
+*.sqlite
+*.db
+*.dump
